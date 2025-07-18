@@ -3,13 +3,13 @@ module MyLib (plugin, Diff (..)) where
 import Data.Data
 import Data.IORef
 import Data.Maybe
-import GHC.Plugins
+import GHC.Plugins hiding ((<>))
 import GHC.Types.Avail
 
 newtype Diff = Diff String deriving (Typeable, Data)
 
 plugin :: Plugin
-plugin = defaultPlugin {installCoreToDos = install, pluginRecompile = purePlugin}
+plugin = defaultPlugin{installCoreToDos = install, pluginRecompile = purePlugin}
 
 install :: [CommandLineOption] -> [CoreToDo] -> CoreM [CoreToDo]
 install _ todos = pure $ CoreDoPluginPass "Add greeting" pass : todos
@@ -20,8 +20,8 @@ pass modGuts = do
   (newAvails, newBinds) <- fmap unzip $ sequence $ mapMaybe (modify anns) $ mg_binds modGuts
   pure
     modGuts
-      { mg_exports = newAvails ++ mg_exports modGuts,
-        mg_binds = newBinds ++ mg_binds modGuts
+      { mg_exports = newAvails <> mg_exports modGuts
+      , mg_binds = newBinds <> mg_binds modGuts
       }
 
 modify :: NameEnv Diff -> CoreBind -> Maybe (CoreM (AvailInfo, CoreBind))
